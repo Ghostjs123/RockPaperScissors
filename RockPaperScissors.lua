@@ -8,11 +8,11 @@ SLASH_ROCKPAPERSCISSORS1, SLASH_ROCKPAPERSCISSORS2 = "/rps", "/rockpaperscissors
 function SlashCmdList.ROCKPAPERSCISSORS(args)
     local selection, name
     if string.find(args, "rock") then
-        selection = "Rock"
+        selection = "rock"
     elseif string.find(args, "paper") then
-        selection = "Paper"
+        selection = "paper"
     elseif string.find(args, "scissors") then
-        selection = "Scissors"
+        selection = "scissors"
     else
         DEFAULT_CHAT_FRAME:AddMessage("Incorrect format: /rps (choice) (name)")
         DEFAULT_CHAT_FRAME:AddMessage("Choices are: rock, paper, scissors")
@@ -59,7 +59,11 @@ function SlashCmdList.ROCKPAPERSCISSORS(args)
         end
     elseif name ~= nil then -- we have 2 arguments in temp so try to setup a match btwn them
         if UnitInRaid("player") and rps_NameInRaid(temp[1] and rps_NameInRaid(temp[2])) then
-            SendChatMessage("Rock paper scissors between " .. temp[1] .. " and " .. temp[2])
+            SendChatMessage("Rock paper scissors between " .. temp[1] .. " and " .. temp[2] .. " whisper me your choice")
+            rps_SpecialChallenge.name1 = temp[1]
+            rps_SpecialChallenge.name2 = temp[2]
+            rps_SpecialChallenge.selection1 = ""
+            rps_SpecialChallenge.selection2 = ""
         end
     end
 end
@@ -96,24 +100,20 @@ function rps_HandleWhisperMsg(msg, author)
             tab.selection = ""
             table.insert(rps_IncomingChallenges, tab)
         end
-    elseif string.find("I've locked in") then
-        if rps_SpecialChallenge.selection ~= "" and rps_SpecialChallenge.selection ~= nil then
-            SendChatMessage(rps_SpecialChallenge.selection, "RAID")
-        end
-    elseif string.find(msg, "Rock") or string.find(msg, "Paper") or string.find(msg, "Scissors") then
+    elseif string.find(msg, "rock") or string.find(msg, "paper") or string.find(msg, "scissors") then
         rps_HandleSelectionMsg(msg, author)
     end
 end
 
 function rps_HandlePartyMsg(msg, author)
-    local isSelection = string.find(msg, "Rock") or string.find(msg, "Paper") or string.find(msg, "Scissors")
+    local isSelection = string.find(msg, "rock") or string.find(msg, "paper") or string.find(msg, "scissors")
     if isSelection then
         rps_HandleSelectionMsg(msg, author)
     end
 end
 
 function rps_HandleRaidMsg(msg, author)
-    local isSelection = string.find(msg, "Rock") or string.find(msg, "Paper") or string.find(msg, "Scissors")
+    local isSelection = string.find(msg, "rock") or string.find(msg, "paper") or string.find(msg, "scissors")
     if isSelection then
         rps_HandleSelectionMsg(msg, author)
     elseif string.find(msg, "Rock paper scissors between") then
@@ -135,9 +135,21 @@ function rps_HandleRaidMsg(msg, author)
 end
 
 function rps_HandleSelectionMsg(msg, author)
-    if rps_SpecialChallenge.name == author then
-        SendChatMessage(rps_SpecialChallenge.selection .. rps_GetWinOrLoss(msg, rps_SpecialChallenge.selection), "RAID")
-        rps_SpecialChallenge = {}
+    if rps_SpecialChallenge.name1 == author or rps_SpecialChallenge.name2 == author then
+        if rps_SpecialChallenge.name1 == author then
+            rps_SpecialChallenge.selection1 = msg
+        else
+            rps_SpecialChallenge.selection2 = msg
+        end
+        if rps_SpecialChallenge.selection1 ~= nil and rps_SpecialChallenge.selection1 ~= "" and rps_SpecialChallenge.selection2 ~= nil and rps_SpecialChallenge.selection2 ~= "" then
+            local winner = rps_GetSpecialWinOrLoss(rps_SpecialChallenge.name1, rps_SpecialChallenge.selection1, rps_SpecialChallenge.name2, rps_SpecialChallenge.selection2)
+            if winner == "tie" then
+                SendChatMessage(rps_SpecialChallenge.name1 .. " and " .. rps_SpecialChallenge.name2 .. " tied with " .. rps_SpecialChallenge.selection1, "RAID")
+            else
+                SendChatMessage(rps_SpecialChallenge.name1 .. " chose " .. rps_SpecialChallenge.selection1 .. " and " .. rps_SpecialChallenge.name2 .. " chose " .. rps_SpecialChallenge.selection2 .. " , " .. winner .. " wins", "RAID")
+            end
+            rps_SpecialChallenge = {}
+        end
     else
         for id, tab in rps_OutgoingChallenges do
             if tab.name == author then
@@ -157,30 +169,48 @@ end
 function rps_GetWinOrLoss(opponentMsg, mySelection)
     local opponenetSelection
     if string.find(opponentMsg, "rock") then
-        opponenetSelection = "Rock"
+        opponenetSelection = "rock"
     elseif string.find(opponentMsg, "paper") then
-        opponenetSelection = "Paper"
+        opponenetSelection = "paper"
     elseif string.find(opponentMsg, "scissors") then
-        opponenetSelection = "Scissors"
+        opponenetSelection = "scissors"
     end
 
     -- ties
-    if opponenetSelection == "Rock" and mySelection == "Rock" then
+    if opponenetSelection == "rock" and mySelection == "rock" then
         return ", tie"
-    elseif opponenetSelection == "Paper" and mySelection == "Paper" then
+    elseif opponenetSelection == "paper" and mySelection == "paper" then
         return ", tie"
-    elseif opponenetSelection == "Scissors" and mySelection == "Scissors" then
+    elseif opponenetSelection == "scissors" and mySelection == "scissors" then
         return ", tie"
     -- i win
-    elseif opponenetSelection == "Rock" and mySelection == "Paper" then
+    elseif opponenetSelection == "rock" and mySelection == "paper" then
         return ", I lose"
-    elseif opponenetSelection == "Paper" and mySelection == "Scissors" then
+    elseif opponenetSelection == "paper" and mySelection == "scissors" then
         return ", I lose"
-    elseif opponenetSelection == "Scissors" and mySelection == "Rock" then
+    elseif opponenetSelection == "scissors" and mySelection == "rock" then
         return ", I lose"
     -- i lose
     else
         return ", I win"
+    end
+end
+
+function rps_GetSpecialWinOrLoss(name1, selection1, name2, selection2)
+    if selection1 == "rock" and selection2 == "rock" then
+        return "tie"
+    elseif selection1 == "paper" and selection2 == "paper" then
+        return "tie"
+    elseif selection1 == "scissors" and selection2 == "scissors" then
+        return "tie"
+    elseif selection1 == "rock" and selection2 == "paper" then
+        return name2
+    elseif selection1 == "paper" and selection2 == "scissors" then
+        return name2
+    elseif selection1 == "scissors" and selection2 == "rock" then
+        return name2
+    else
+        return name1
     end
 end
 

@@ -35,7 +35,7 @@ function SlashCmdList.ROCKPAPERSCISSORS(args)
             if tab.name == name then
                 local chatType = rps_GetChatType(tab.name)
                 if chatType == "WHISPER" then
-                    SendChatMessage(selection, chatType, tab.name)
+                    SendChatMessage(selection, chatType, GetDefaultLanguage("player"), tab.name)
                 else
                     SendChatMessage(selection, chatType)
                 end
@@ -48,6 +48,12 @@ function SlashCmdList.ROCKPAPERSCISSORS(args)
         tab.name = name
         tab.selection = selection
         table.insert(rps_OutgoingChallenges, tab)
+        local chatType = rps_GetChatType(tab.name)
+        if chatType == "WHISPER" then
+            SendChatMessage("I challenge you to rock paper scissors", chatType, GetDefaultLanguage("player"), tab.name)
+        else
+            SendChatMessage("I challenge you to rock paper scissors", chatType)
+        end
     end
 end
 
@@ -109,7 +115,7 @@ function rps_HandleSelectionMsg(msg, author)
         if tab.name == author then
             local chatType = rps_GetChatType(tab.name)
             if chatType == "WHISPER" then
-                SendChatMessage(tab.selection .. rps_GetWinOrLoss(msg, tab.selection), chatType, tab.name)
+                SendChatMessage(tab.selection .. rps_GetWinOrLoss(msg, tab.selection), chatType, GetDefaultLanguage("player"), tab.name)
             else
                 SendChatMessage(tab.selection .. rps_GetWinOrLoss(msg, tab.selection), chatType)
             end
@@ -138,14 +144,14 @@ function rps_GetWinOrLoss(opponentMsg, mySelection)
         return ", tie"
     -- i win
     elseif opponenetSelection == "Rock" and mySelection == "Paper" then
-        return ", I win"
+        return ", I lose"
     elseif opponenetSelection == "Paper" and mySelection == "Scissors" then
-        return ", I win"
+        return ", I lose"
     elseif opponenetSelection == "Scissors" and mySelection == "Rock" then
-        return ", I win"
+        return ", I lose"
     -- i lose
     else
-        return ", I lose"
+        return ", I win"
     end
 end
 
@@ -195,4 +201,26 @@ string.gmatch = string.gmatch or function(str, pattern)
             end
         end
     end
+end
+
+function rps_tprint(tbl, indent)
+    if not indent then indent = 0 end
+    for k, v in pairs(tbl) do
+        local formatting = string.rep("  ", indent) .. k .. ": "
+        if type(v) == "table" then
+            send_message(formatting)
+            tprint(v, indent+1)
+        elseif type(v) == 'boolean' then
+            send_message(formatting .. tostring(v))
+        else
+            send_message(formatting .. v)
+        end
+    end
+end
+
+function rps_test()
+    DEFAULT_CHAT_FRAME:AddMessage("rps_test() start")
+    rps_tprint(rps_IncomingChallenges)
+    rps_tprint(rps_IncomingChallenges)
+    DEFAULT_CHAT_FRAME:AddMessage("rps_test() end")
 end

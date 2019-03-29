@@ -1,0 +1,14 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\FrameXML\UI.xsd">
+    <Script file="RockPaperScissors.lua"/>
+    <Frame name="RockPaperScissorsFrame" hidden="true">
+        <Scripts>
+            <OnLoad>
+                    RockPaperScissors_OnLoad()
+            </OnLoad>
+            <OnEvent>
+                    RockPaperScissors_OnEvent(event, arg1, arg2)
+            </OnEvent>
+        </Scripts>
+    </Frame>
+</Ui>

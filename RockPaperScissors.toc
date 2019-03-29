@@ -1,0 +1,7 @@
+## Interface: 11200
+## Title: RockPaperScissors
+## Version: 1.0
+## Notes: Rock Paper Scissors
+## Author: Kaymon
+RockPaperScissors.lua
+RockPaperScissors.xml

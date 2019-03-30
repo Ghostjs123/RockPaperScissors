@@ -6,42 +6,32 @@ SlashCmdList["SLASH_RockPaperScissors"] = function() end
 
 SLASH_ROCKPAPERSCISSORS1, SLASH_ROCKPAPERSCISSORS2 = "/rps", "/rockpaperscissors"
 function SlashCmdList.ROCKPAPERSCISSORS(args)
+
     local selection, name
+
     if string.find(args, "rock") then
         selection = "rock"
     elseif string.find(args, "paper") then
         selection = "paper"
     elseif string.find(args, "scissors") then
         selection = "scissors"
-    else
-        DEFAULT_CHAT_FRAME:AddMessage("Incorrect format: /rps (choice) (name)")
-        DEFAULT_CHAT_FRAME:AddMessage("Choices are: rock, paper, scissors")
     end
 
     local temp = split(args, " ")
-
     if(type(temp) == "string") then
         temp = {temp} -- need it to be a table, even if just one value
     end
 
     if table.getn(temp) > 1 then
         name = temp[2]
-    elseif rps_SpecialChallenge.name ~= nil and selection ~= nil then
-        rps_SpecialChallenge.selection = selection
-        SendChatMessage("I've locked in", "WHISPER", GetDefaultLanguage("player"), rps_SpecialChallenge.name)
     else
-        DEFAULT_CHAT_FRAME:AddMessage("Incorrect format: missing name")
+        DEFAULT_CHAT_FRAME:AddMessage("Incorrect format: /rps (choice) (name) or /rps (name) (name)")
     end
 
     if selection ~= nil and name ~= nil then
         for id, tab in rps_IncomingChallenges do
             if tab.name == name then
-                local chatType = rps_GetChatType(tab.name)
-                if chatType == "WHISPER" then
-                    SendChatMessage(selection, chatType, GetDefaultLanguage("player"), tab.name)
-                else
-                    SendChatMessage(selection, chatType)
-                end
+                SendChatMessage(selection, "WHISPER", GetDefaultLanguage("player"), tab.name)
                 table.remove(rps_IncomingChallenges, id)
                 return
             end
@@ -51,20 +41,15 @@ function SlashCmdList.ROCKPAPERSCISSORS(args)
         tab.name = name
         tab.selection = selection
         table.insert(rps_OutgoingChallenges, tab)
-        local chatType = rps_GetChatType(tab.name)
-        if chatType == "WHISPER" then
-            SendChatMessage("I challenge you to rock paper scissors", chatType, GetDefaultLanguage("player"), tab.name)
-        else
-            SendChatMessage("I challenge you to rock paper scissors", chatType)
-        end
+        SendChatMessage("I challenge you to rock paper scissors", "WHISPER", GetDefaultLanguage("player"), tab.name)
     elseif name ~= nil then -- we have 2 arguments in temp so try to setup a match btwn them
-        if UnitInRaid("player") and rps_NameInRaid(temp[1] and rps_NameInRaid(temp[2])) then
-            SendChatMessage("Rock paper scissors between " .. temp[1] .. " and " .. temp[2] .. " whisper me your choice")
-            rps_SpecialChallenge.name1 = temp[1]
-            rps_SpecialChallenge.name2 = temp[2]
-            rps_SpecialChallenge.selection1 = ""
-            rps_SpecialChallenge.selection2 = ""
-        end
+        local tab = {}
+        tab.name1 = temp[1]
+        tab.name2 = temp[2]
+        tab.selection1 = ""
+        tab.selection2 = ""
+        rps_SpecialChallenge = tab
+        SendChatMessage("RPS between " .. temp[1] .. " and " .. temp[2] .. " whisper me your choice", "RAID")
     end
 end
 
@@ -100,21 +85,19 @@ function rps_HandleWhisperMsg(msg, author)
             tab.selection = ""
             table.insert(rps_IncomingChallenges, tab)
         end
-    elseif string.find(msg, "rock") or string.find(msg, "paper") or string.find(msg, "scissors") then
+    elseif msg == "rock" or msg == "paper" or msg == "scissors" then
         rps_HandleSelectionMsg(msg, author)
     end
 end
 
 function rps_HandlePartyMsg(msg, author)
-    local isSelection = string.find(msg, "rock") or string.find(msg, "paper") or string.find(msg, "scissors")
-    if isSelection then
+    if msg == "rock" or msg == "paper" or msg == "scissors" then
         rps_HandleSelectionMsg(msg, author)
     end
 end
 
 function rps_HandleRaidMsg(msg, author)
-    local isSelection = string.find(msg, "rock") or string.find(msg, "paper") or string.find(msg, "scissors")
-    if isSelection then
+    if msg == "rock" or msg == "paper" or msg == "scissors" then
         rps_HandleSelectionMsg(msg, author)
     elseif string.find(msg, "Rock paper scissors between") then
         local temp = split(msg, " ")
@@ -146,19 +129,14 @@ function rps_HandleSelectionMsg(msg, author)
             if winner == "tie" then
                 SendChatMessage(rps_SpecialChallenge.name1 .. " and " .. rps_SpecialChallenge.name2 .. " tied with " .. rps_SpecialChallenge.selection1, "RAID")
             else
-                SendChatMessage(rps_SpecialChallenge.name1 .. " chose " .. rps_SpecialChallenge.selection1 .. " and " .. rps_SpecialChallenge.name2 .. " chose " .. rps_SpecialChallenge.selection2 .. " , " .. winner .. " wins", "RAID")
+                SendChatMessage(rps_SpecialChallenge.name1 .. " chose " .. rps_SpecialChallenge.selection1 .. " and " .. rps_SpecialChallenge.name2 .. " chose " .. rps_SpecialChallenge.selection2 .. ", " .. winner .. " wins", "RAID")
             end
             rps_SpecialChallenge = {}
         end
     else
         for id, tab in rps_OutgoingChallenges do
             if tab.name == author then
-                local chatType = rps_GetChatType(tab.name)
-                if chatType == "WHISPER" then
-                    SendChatMessage(tab.selection .. rps_GetWinOrLoss(msg, tab.selection), chatType, GetDefaultLanguage("player"), tab.name)
-                else
-                    SendChatMessage(tab.selection .. rps_GetWinOrLoss(msg, tab.selection), chatType)
-                end
+                SendChatMessage(tab.selection .. rps_GetWinOrLoss(msg, tab.selection), "WHISPER", GetDefaultLanguage("player"), tab.name)
                 table.remove(rps_OutgoingChallenges, id)
                 return
             end
@@ -214,30 +192,6 @@ function rps_GetSpecialWinOrLoss(name1, selection1, name2, selection2)
     end
 end
 
-function rps_GetChatType(playerName)
-    if UnitInRaid("player") then
-        if rps_NameInRaid(playerName) then
-            return "RAID"
-        end
-    elseif UnitInParty("player") then
-        -- todo find a way to check for the player in a party
-        for i = 1, GetNumPartyMembers() do
-
-        end
-    end
-    return "WHISPER"
-end
-
-function rps_NameInRaid(playerName)
-    local name
-    for i = 1, GetNumRaidMembers() do
-        name = GetRaidRosterInfo(i)
-        if name == playerName then
-            return true
-        end
-    end
-end
-
 function split(s, delimiter)
     local result = {}
     for match in string.gmatch(s..delimiter, "(.-)"..delimiter) do
@@ -285,7 +239,11 @@ end
 
 function rps_test()
     DEFAULT_CHAT_FRAME:AddMessage("rps_test() start")
+    DEFAULT_CHAT_FRAME:AddMessage("rps_IncomingChallenges:")
     rps_tprint(rps_IncomingChallenges)
+    DEFAULT_CHAT_FRAME:AddMessage("rps_OutgoingChallenges:")
     rps_tprint(rps_OutgoingChallenges)
+    DEFAULT_CHAT_FRAME:AddMessage("rps_SpecialChallenge:")
+    rps_tprint(rps_SpecialChallenge)
     DEFAULT_CHAT_FRAME:AddMessage("rps_test() end")
 end

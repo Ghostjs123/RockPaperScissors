@@ -163,14 +163,14 @@ function rps_GetWinOrLoss(opponentMsg, mySelection)
         return ", tie"
     -- i win
     elseif opponenetSelection == "rock" and mySelection == "paper" then
-        return ", I lose"
+        return ", I win"
     elseif opponenetSelection == "paper" and mySelection == "scissors" then
-        return ", I lose"
+        return ", I win"
     elseif opponenetSelection == "scissors" and mySelection == "rock" then
-        return ", I lose"
+        return ", I win"
     -- i lose
     else
-        return ", I win"
+        return ", I loss"
     end
 end
 

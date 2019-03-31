@@ -41,7 +41,7 @@ function SlashCmdList.ROCKPAPERSCISSORS(args)
         tab.name = name
         tab.selection = selection
         table.insert(rps_OutgoingChallenges, tab)
-        SendChatMessage("I challenge you to rock paper scissors", "WHISPER", GetDefaultLanguage("player"), tab.name)
+        SendChatMessage("I challenge you to rock paper scissors, whisper me your choice", "WHISPER", GetDefaultLanguage("player"), tab.name)
     elseif name ~= nil then -- we have 2 arguments in temp so try to setup a match btwn them
         local tab = {}
         tab.name1 = temp[1]
@@ -170,7 +170,7 @@ function rps_GetWinOrLoss(opponentMsg, mySelection)
         return ", I win"
     -- i lose
     else
-        return ", I loss"
+        return ", I lose"
     end
 end
 
